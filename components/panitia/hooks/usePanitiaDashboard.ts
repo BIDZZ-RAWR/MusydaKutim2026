@@ -61,6 +61,19 @@ export function usePanitiaDashboard() {
       }
 
       try {
+        const permStatus = await navigator.permissions.query({ name: "camera" as PermissionName })
+        if (permStatus.state === "denied") {
+          setStatus("error")
+          setMessage("Akses kamera diblokir oleh browser. Buka ikon gembok 🔒 di bilah alamat, setel izin kamera ke 'Diizinkan', lalu refresh halaman.")
+          setIsScanning(false)
+          await logError("Camera Permission", "Izin kamera sebelumnya ditolak pengguna / diblokir header Permissions-Policy")
+          return
+        }
+      } catch {
+        // Permissions API tidak didukung browser ini; lanjut ke getUserMedia
+      }
+
+      try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true })
         stream.getTracks().forEach((t) => t.stop())
       } catch (err) {

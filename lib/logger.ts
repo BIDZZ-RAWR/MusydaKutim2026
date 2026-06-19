@@ -20,7 +20,11 @@ export function getCameraErrorMessage(err: unknown) {
   const message = (err as any)?.message || ""
 
   if (name === "NotAllowedError" || name === "SecurityError") {
-    return "Akses kamera diblokir oleh browser. Buka ikon gembok di bilah alamat, setel izin kamera ke 'Diizinkan', lalu refresh halaman."
+    const isHttp = typeof window !== "undefined" && window.location.protocol === "http:"
+    if (isHttp) {
+      return "Koneksi tidak aman (HTTP). Akses kamera hanya tersedia melalui HTTPS. Hubungi administrator."
+    }
+    return "Akses kamera diblokir oleh browser. Buka ikon gembok 🔒 di bilah alamat, setel izin kamera ke 'Diizinkan', lalu refresh halaman."
   }
 
   if (name === "NotFoundError" || name === "OverconstrainedError") {
