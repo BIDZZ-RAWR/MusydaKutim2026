@@ -1,10 +1,11 @@
 "use client"
 
+import { useRef, useState } from "react"
 import { usePanitiaDashboard } from "@/components/panitia/hooks/usePanitiaDashboard"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Camera } from "lucide-react"
-import ScannerSection from "@/components/panitia/ScannerSection"
+import ScannerSection, { type ScannerSectionHandle } from "@/components/panitia/ScannerSection"
 import CameraControls from "@/components/panitia/CameraControls"
 import ManualInput from "@/components/panitia/ManualInput"
 import StatusMessage from "@/components/panitia/StatusMessage"
@@ -19,12 +20,24 @@ export default function PanitiaDashboard() {
     message,
     monitorConnected,
     lastHeartbeat,
-    isScanning,
-    startScanner,
-    stopScanner,
     handleScannerError,
     handleProcessParticipant,
   } = usePanitiaDashboard()
+
+  const scannerRef = useRef<ScannerSectionHandle>(null)
+  const [cameraActive, setCameraActive] = useState(false)
+  const [cameraLoading, setCameraLoading] = useState(false)
+
+  const handleStartCamera = () => {
+    setCameraActive(true)
+    scannerRef.current?.startCamera()
+  }
+
+  const handleStopCamera = () => {
+    setCameraActive(false)
+    setCameraLoading(false)
+    scannerRef.current?.stopCamera()
+  }
 
   return (
     <div className="max-w-md mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500">
@@ -51,19 +64,21 @@ export default function PanitiaDashboard() {
         <CardContent className="space-y-4">
           <div className="overflow-hidden rounded-lg bg-black">
             <ScannerSection
-              scanMode={isScanning}
+              ref={scannerRef}
               onDecode={(text) => {
                 setScanResult(text)
                 handleProcessParticipant(text)
               }}
               onError={handleScannerError}
+              onLoadingChange={setCameraLoading}
             />
           </div>
 
           <CameraControls
-            isScanning={isScanning}
-            onStart={startScanner}
-            onStop={stopScanner}
+            isScanning={cameraActive}
+            onStart={handleStartCamera}
+            onStop={handleStopCamera}
+            loading={cameraLoading}
           />
 
           <ManualInput

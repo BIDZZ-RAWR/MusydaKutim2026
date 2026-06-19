@@ -16,7 +16,6 @@ export function usePanitiaDashboard() {
   const [message, setMessage] = useState("")
   const [monitorConnected, setMonitorConnected] = useState(false)
   const [lastHeartbeat, setLastHeartbeat] = useState<Date | null>(null)
-  const [isScanning, setIsScanning] = useState(false)
 
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, "BilikVoting", panitiaId), (doc) => {
@@ -38,21 +37,10 @@ export function usePanitiaDashboard() {
     return () => unsubscribe()
   }, [panitiaId])
 
-  const startScanner = () => {
-    if (isScanning) return
-    setStatus("idle")
-    setMessage("")
-    setScanResult("")
-    setIsScanning(true)
-  }
-
-  const stopScanner = () => setIsScanning(false)
-
   const handleScannerError = async (err: unknown) => {
     const readable = getCameraErrorMessage(err)
     setStatus("error")
     setMessage(readable)
-    setIsScanning(false)
     await logError("QR Scanner Error", readable)
   }
 
@@ -117,9 +105,6 @@ export function usePanitiaDashboard() {
     message,
     monitorConnected,
     lastHeartbeat,
-    isScanning,
-    startScanner,
-    stopScanner,
     handleScannerError,
     handleProcessParticipant,
   }

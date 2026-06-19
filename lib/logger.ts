@@ -24,6 +24,10 @@ export function getCameraErrorMessage(err: unknown) {
     if (isHttp) {
       return "Koneksi tidak aman (HTTP). Akses kamera hanya tersedia melalui HTTPS. Hubungi administrator."
     }
+    const isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent)
+    if (isIOS) {
+      return "Akses kamera diblokir. Buka Pengaturan > Safari > Kamera, setel ke 'Izinkan'. Atau buka Pengaturan > [Nama App] > Kamera, setel ke 'Izinkan'."
+    }
     return "Akses kamera diblokir oleh browser. Buka ikon gembok 🔒 di bilah alamat, setel izin kamera ke 'Diizinkan', lalu refresh halaman."
   }
 
@@ -33,6 +37,10 @@ export function getCameraErrorMessage(err: unknown) {
 
   if (name === "NotReadableError") {
     return "Kamera sedang dipakai aplikasi lain. Tutup aplikasi yang memakai kamera lalu coba lagi."
+  }
+
+  if (message?.toLowerCase?.().includes("not supported") || message?.toLowerCase?.().includes("could not start")) {
+    return "Browser tidak mendukung akses kamera. Gunakan Chrome atau Safari versi terbaru."
   }
 
   return `Gagal membuka kamera. ${message || "Periksa pengaturan browser Anda lalu refresh halaman."}`
