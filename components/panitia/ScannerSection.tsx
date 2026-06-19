@@ -20,6 +20,8 @@ const CONTAINER_ID = "panitia-qr-scanner"
 const ScannerSection = forwardRef<ScannerSectionHandle, ScannerSectionProps>(
   ({ onDecode, onError, onLoadingChange }, ref) => {
     const scannerRef = useRef<Html5Qrcode | null>(null)
+    const lastScanTimeRef = useRef(0)
+    const SCAN_DEBOUNCE_MS = 3000
     const [cameraActive, setCameraActive] = useState(false)
     const [loading, setLoading] = useState(false)
 
@@ -65,6 +67,9 @@ const ScannerSection = forwardRef<ScannerSectionHandle, ScannerSectionProps>(
             qrbox: { width: 250, height: 250 },
           },
           (decodedText) => {
+            const now = Date.now()
+            if (now - lastScanTimeRef.current < SCAN_DEBOUNCE_MS) return
+            lastScanTimeRef.current = now
             onDecode(decodedText)
           },
           () => {},

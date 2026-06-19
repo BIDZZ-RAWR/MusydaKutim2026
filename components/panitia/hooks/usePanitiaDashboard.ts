@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { doc, updateDoc, getDocs, query, collection, where, onSnapshot, limit } from "firebase/firestore"
 import { db } from "@/lib/firebase"
@@ -10,6 +10,7 @@ export function usePanitiaDashboard() {
   const params = useParams()
   const router = useRouter()
   const panitiaId = params.id as string
+  const processingRef = useRef(false)
 
   const [scanResult, setScanResult] = useState("")
   const [status, setStatus] = useState("idle")
@@ -45,17 +46,20 @@ export function usePanitiaDashboard() {
   }
 
   const handleProcessParticipant = async (nib: string) => {
-    if (!monitorConnected) {
-      setStatus("error")
-      setMessage("Monitor belum terhubung! Pastikan monitor sudah dibuka.")
-      logError("Monitor Disconnected", `Percobaan scan NIB ${nib} saat monitor mati di Bilik ${panitiaId}`)
-      return
-    }
-
-    setStatus("processing")
-    setMessage("Mencari data peserta...")
+    if (processingRef.current) return
+    processingRef.current = true
 
     try {
+      if (!monitorConnected) {
+        setStatus("error")
+        setMessage("Monitor belum terhubung! Pastikan monitor sudah dibuka.")
+        logError("Monitor Disconnected", `Percobaan scan NIB ${nib} saat monitor mati di Bilik ${panitiaId}`)
+        return
+      }
+
+      setStatus("processing")
+      setMessage("Mencari data peserta...")
+
       const q = query(
         collection(db, "Data_Peserta"),
         where("NIB", "==", nib),
@@ -94,6 +98,8 @@ export function usePanitiaDashboard() {
       setStatus("error")
       setMessage("Terjadi kesalahan sistem.")
       logError("System Error", `Error saat memproses peserta ${nib}: ${error.message}`)
+    } finally {
+      processingRef.current = false
     }
   }
 
