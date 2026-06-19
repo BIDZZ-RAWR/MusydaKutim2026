@@ -24,8 +24,8 @@ export default function ScannerSection({ isScanning, onDecode, onError }: Scanne
           audio: false,
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 640 },
+            height: { ideal: 480 },
           },
         }}
         scanDelay={400}

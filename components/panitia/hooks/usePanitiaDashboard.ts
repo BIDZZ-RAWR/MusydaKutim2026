@@ -70,18 +70,7 @@ export function usePanitiaDashboard() {
           return
         }
       } catch {
-        // Permissions API tidak didukung browser ini; lanjut ke getUserMedia
-      }
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-        stream.getTracks().forEach((t) => t.stop())
-      } catch (err) {
-        const readable = getCameraErrorMessage(err)
-        setStatus("error")
-        setMessage(readable)
-        setIsScanning(false)
-        await logError("Camera Permission", readable)
+        // Permissions API tidak didukung browser ini
       }
     }
 
