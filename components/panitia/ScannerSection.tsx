@@ -1,6 +1,6 @@
 "use client"
 
-import { Scanner as QrScanner } from "@yudiel/react-qr-scanner"
+import { Scanner } from "@yudiel/react-qr-scanner"
 import { Camera } from "lucide-react"
 
 interface ScannerSectionProps {
@@ -12,10 +12,12 @@ interface ScannerSectionProps {
 export default function ScannerSection({ isScanning, onDecode, onError }: ScannerSectionProps) {
   if (isScanning) {
     return (
-      <QrScanner
+      <Scanner
         key="active-scanner"
-        onDecode={(decodedText) => {
-          onDecode(decodedText)
+        onScan={(detectedCodes) => {
+          if (detectedCodes.length > 0) {
+            onDecode(detectedCodes[0].rawValue)
+          }
         }}
         onError={(error) => {
           if (error) onError(error)
