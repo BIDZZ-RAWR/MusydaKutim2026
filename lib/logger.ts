@@ -16,6 +16,25 @@ export async function logError(title: string, errorMsg: string) {
 }
 
 export function getCameraErrorMessage(err: unknown) {
+  if (typeof err === "string") {
+    if (err.includes("not found") || err.includes("Not found")) {
+      return "Elemen kamera tidak ditemukan. Refresh halaman dan coba lagi."
+    }
+    if (err.includes("not supported") || err.includes("Not supported")) {
+      return "Browser tidak mendukung akses kamera. Gunakan Chrome atau Safari terbaru."
+    }
+    if (err.includes("NotFoundError") || err.includes("NotFound")) {
+      return "Perangkat kamera tidak ditemukan. Pastikan kamera tersedia."
+    }
+    if (err.includes("NotAllowed") || err.includes("Permission")) {
+      return "Akses kamera ditolak. Izinkan akses kamera di pengaturan browser."
+    }
+    if (err.includes("NotReadable")) {
+      return "Kamera sedang dipakai aplikasi lain. Tutup aplikasi lain lalu coba lagi."
+    }
+    return `Gagal membuka kamera. ${err}`
+  }
+
   const name = (err as any)?.name || ""
   const message = (err as any)?.message || ""
 

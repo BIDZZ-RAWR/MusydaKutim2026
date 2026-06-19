@@ -15,10 +15,11 @@ interface ScannerSectionProps {
   onLoadingChange?: (loading: boolean) => void
 }
 
+const CONTAINER_ID = "panitia-qr-scanner"
+
 const ScannerSection = forwardRef<ScannerSectionHandle, ScannerSectionProps>(
   ({ onDecode, onError, onLoadingChange }, ref) => {
     const scannerRef = useRef<Html5Qrcode | null>(null)
-    const containerId = useRef(`qr-scanner-${Math.random().toString(36).slice(2, 8)}`).current
     const [cameraActive, setCameraActive] = useState(false)
     const [loading, setLoading] = useState(false)
 
@@ -42,11 +43,19 @@ const ScannerSection = forwardRef<ScannerSectionHandle, ScannerSectionProps>(
     const startCamera = useCallback(async () => {
       if (scannerRef.current) return
 
+      if (typeof navigator === "undefined" || !navigator.mediaDevices) {
+        onError(new Error("Browser tidak mendukung akses kamera"))
+        return
+      }
+
       setLoading(true)
       onLoadingChange?.(true)
 
       try {
-        const scanner = new Html5Qrcode(containerId)
+        const scanner = new Html5Qrcode(CONTAINER_ID, {
+          verbose: false,
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        })
         scannerRef.current = scanner
 
         await scanner.start(
@@ -54,7 +63,6 @@ const ScannerSection = forwardRef<ScannerSectionHandle, ScannerSectionProps>(
           {
             fps: 10,
             qrbox: { width: 250, height: 250 },
-            formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
           },
           (decodedText) => {
             onDecode(decodedText)
@@ -72,7 +80,7 @@ const ScannerSection = forwardRef<ScannerSectionHandle, ScannerSectionProps>(
         onLoadingChange?.(false)
         onError(err)
       }
-    }, [containerId, onDecode, onError, onLoadingChange])
+    }, [onDecode, onError, onLoadingChange])
 
     useEffect(() => {
       return () => {
@@ -84,29 +92,21 @@ const ScannerSection = forwardRef<ScannerSectionHandle, ScannerSectionProps>(
     }, [])
 
     return (
-      <div
-        id={containerId}
-        style={{
-          width: "100%",
-          minHeight: "16rem",
-          backgroundColor: "#000",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        className="overflow-hidden rounded-lg relative"
-      >
+      <div className="relative w-full overflow-hidden rounded-lg" style={{ minHeight: "16rem" }}>
+        <div id={CONTAINER_ID} className="w-full h-full" />
+
         {!cameraActive && !loading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 p-4 bg-gray-100 z-10">
-            <Camera className="w-12 h-12 mb-2 opacity-50" />
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-100 p-4 text-gray-500">
+            <Camera className="mb-2 h-12 w-12 opacity-50" />
             <p>Kamera tidak aktif</p>
-            <p className="text-xs mt-1">Klik &quot;Buka Kamera&quot; untuk memulai</p>
+            <p className="mt-1 text-xs">Klik &quot;Buka Kamera&quot; untuk memulai</p>
           </div>
         )}
+
         {loading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 p-4 bg-black z-10">
-            <Loader2 className="w-8 h-8 mb-2 animate-spin text-white" />
-            <p className="text-white text-sm">Mengakses kamera...</p>
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black p-4 text-gray-500">
+            <Loader2 className="mb-2 h-8 w-8 animate-spin text-white" />
+            <p className="text-sm text-white">Mengakses kamera...</p>
           </div>
         )}
       </div>
