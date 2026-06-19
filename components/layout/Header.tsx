@@ -4,7 +4,7 @@ export default function Header() {
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex items-center gap-4">
-        <div className="relative h-14 w-28 shrink-0">
+        <div className="relative h-20 w-28 shrink-0">
           <Image
             src="/images/logo.png"
             alt="Logo IPM"
