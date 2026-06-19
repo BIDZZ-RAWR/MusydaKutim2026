@@ -38,45 +38,6 @@ export function usePanitiaDashboard() {
     return () => unsubscribe()
   }, [panitiaId])
 
-  useEffect(() => {
-    if (!isScanning) return
-
-    const validateCamera = async () => {
-      const protocol = typeof window !== "undefined" ? window.location.protocol : "https:"
-      const hostname = typeof window !== "undefined" ? window.location.hostname : ""
-      const secureOrigin = protocol === "https:" || hostname === "localhost" || hostname === "127.0.0.1"
-
-      if (!secureOrigin) {
-        setStatus("error")
-        setMessage("Koneksi tidak aman. Akses kamera wajib menggunakan HTTPS. Pastikan alamat URL diawali dengan https://")
-        setIsScanning(false)
-        return
-      }
-
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setStatus("error")
-        setMessage("Peramban tidak mendukung akses kamera. Gunakan Chrome/Firefox terbaru atau perangkat lain.")
-        setIsScanning(false)
-        return
-      }
-
-      try {
-        const permStatus = await navigator.permissions.query({ name: "camera" as PermissionName })
-        if (permStatus.state === "denied") {
-          setStatus("error")
-          setMessage("Akses kamera diblokir oleh browser. Buka ikon gembok 🔒 di bilah alamat, setel izin kamera ke 'Diizinkan', lalu refresh halaman.")
-          setIsScanning(false)
-          await logError("Camera Permission", "Izin kamera sebelumnya ditolak pengguna / diblokir header Permissions-Policy")
-          return
-        }
-      } catch {
-        // Permissions API tidak didukung browser ini
-      }
-    }
-
-    validateCamera()
-  }, [isScanning])
-
   const startScanner = () => {
     if (isScanning) return
     setStatus("idle")

@@ -51,7 +51,7 @@ export default function PanitiaDashboard() {
         <CardContent className="space-y-4">
           <div className="overflow-hidden rounded-lg bg-black">
             <ScannerSection
-              isScanning={isScanning}
+              scanMode={isScanning}
               onDecode={(text) => {
                 setScanResult(text)
                 handleProcessParticipant(text)
