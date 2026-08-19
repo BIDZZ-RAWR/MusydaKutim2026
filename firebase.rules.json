@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Semua koleksi: publik boleh baca, hanya Admin SDK yang boleh nulis
+    match /Data_Admin/{docId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /Data_Siswa/{docId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /Data_Peserta/{docId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /Data_Calon_Formatur/{docId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /BilikVoting/{docId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /TotalSudahVoting/{docId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /TotalBelumVoting/{docId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /LandingContent/{docId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /LandingPage/{docId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /JabatanFormatur/{docId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /error/{docId} {
+      allow get, list, create, update, delete: if true;
+    }
+
+    // Koleksi lain: blokir total
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

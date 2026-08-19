@@ -5,26 +5,22 @@ import {
   collection,
   getDocs,
   doc,
-  writeBatch,
-  setDoc,
   getDoc,
-  serverTimestamp,
   onSnapshot,
   query,
   where,
   orderBy,
   startAfter,
   limit,
-  getCountFromServer,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Panitia, Peserta, Candidate, Bilik, LandingContent, LandingStatus, RolesMap, RoleLabels, ViewStats, EditHistory } from "../types"
 import {
-  ROLE_OPTIONS, PESERTA_PAGE_SIZE, DEFAULT_LANDING_CONTENT,
+  ROLE_OPTIONS, PESERTA_PAGE_SIZE, DEFAULT_LANDING_CONTENT, DEFAULT_LANDING_STATUS,
   labelToKey, landingContentSchema, parseWithFeedback,
 } from "../constants"
-import { normalizeStatus } from "@/lib/validation"
 import { sanitizeText } from "@/lib/utils"
+import { apiPost } from "@/lib/api-client"
 
 const landingSettingsRef = doc(db, "LandingPage", "settings")
 
@@ -37,7 +33,7 @@ export function useAdminDashboard() {
   const [pesertaHasMore, setPesertaHasMore] = useState(true)
   const [pesertaTotalCount, setPesertaTotalCount] = useState(0)
   const [landingContent, setLandingContent] = useState<LandingContent>(DEFAULT_LANDING_CONTENT as LandingContent)
-  const [landingStatus, setLandingStatus] = useState<LandingStatus>({ utama: true, winner: false })
+  const [landingStatus, setLandingStatus] = useState<LandingStatus>(DEFAULT_LANDING_STATUS)
   const [rolesMap, setRolesMap] = useState<RolesMap>({
     ketuaUmum: "", sekretarisUmum: "", bendaharaUmum: "", ketuaOrganisasi: "",
     ketuaPerkaderan: "", ketuaKDI: "", ketuaASBO: "",
@@ -46,7 +42,7 @@ export function useAdminDashboard() {
     ROLE_OPTIONS.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.label }), {}),
   )
   const [prevLandingContent, setPrevLandingContent] = useState<LandingContent>(DEFAULT_LANDING_CONTENT as LandingContent)
-  const [prevLandingStatus, setPrevLandingStatus] = useState<LandingStatus>({ utama: true, winner: false })
+  const [prevLandingStatus, setPrevLandingStatus] = useState<LandingStatus>(DEFAULT_LANDING_STATUS)
   const [prevRolesMap, setPrevRolesMap] = useState<RolesMap>({})
   const [prevRoleLabels, setPrevRoleLabels] = useState<RoleLabels>({})
   const [viewStats, setViewStats] = useState<ViewStats>({ Jumlah: 0 })
@@ -88,19 +84,9 @@ export function useAdminDashboard() {
 
   const syncVotingTotals = async () => {
     try {
-      const [totalSnap, belumSnap] = await Promise.all([
-        getCountFromServer(collection(db, "Data_Peserta")),
-        getCountFromServer(query(collection(db, "Data_Peserta"), where("StatusVoting", "==", "belum"))),
-      ])
-      const total = totalSnap.data().count || 0
-      const belum = belumSnap.data().count || 0
-      const sudah = Math.max(total - belum, 0)
-      setPesertaTotalCount(total)
-      await Promise.all([
-        setDoc(doc(db, "TotalSudahVoting", "Total"), { TotalSudahVoting: sudah }, { merge: true }),
-        setDoc(doc(db, "TotalBelumVoting", "Total"), { TotalBelumVoting: belum }, { merge: true }),
-      ])
-    } catch { console.error("Failed to sync voting totals") }
+      const result = await apiPost("/api/admin/sync", {})
+      setPesertaTotalCount(result.total || 0)
+    } catch (err) { console.error("Failed to sync voting totals", err) }
   }
 
   const resetPeserta = useCallback(async () => {
@@ -162,14 +148,15 @@ export function useAdminDashboard() {
 
   const applyLandingSettings = (data: any, setPrevState = false) => {
     if (!data) return
-    const utamaData = data.utama || data.Utama || {}
     const winnerData = data.winner || data.FormaturTerpilih || {}
     const viewsData = data.views || data.LandingViews
     const historyData = data.editHistory || data.LandingEditHistory
 
-    const nextStatus = {
-      utama: normalizeStatus(utamaData.Status ?? utamaData.status ?? utamaData, true),
-      winner: normalizeStatus(winnerData.Status ?? winnerData.status ?? winnerData, false),
+    const nextStatus: LandingStatus = {
+      showResults: data.showResults !== undefined ? Boolean(data.showResults) : true,
+      winner: winnerData.Status !== undefined
+        ? winnerData.Status === true || winnerData.Status === "true"
+        : false,
     }
     setLandingStatus(nextStatus)
     if (setPrevState) setPrevLandingStatus(nextStatus)
@@ -197,21 +184,7 @@ export function useAdminDashboard() {
   const fetchLandingStatus = async () => {
     try {
       const settingsSnap = await getDoc(landingSettingsRef)
-      const settingsData = settingsSnap.exists() ? settingsSnap.data() : null
-      const hasStatus = Boolean(settingsData?.utama || settingsData?.Utama) || Boolean(settingsData?.winner || settingsData?.FormaturTerpilih)
-      if (settingsData) { applyLandingSettings(settingsData, true); if (hasStatus) return }
-      const [utamaSnap, winnerSnap, viewsSnap, editSnap] = await Promise.all([
-        getDoc(doc(db, "LandingPage", "Utama")), getDoc(doc(db, "LandingPage", "FormaturTerpilih")),
-        getDoc(doc(db, "LandingPage", "LandingViews")), getDoc(doc(db, "LandingPage", "LandingEditHistory")),
-      ])
-      const legacyData = { utama: utamaSnap.exists() ? utamaSnap.data() : undefined, winner: winnerSnap.exists() ? winnerSnap.data() : undefined, views: viewsSnap.exists() ? viewsSnap.data() : undefined, editHistory: editSnap.exists() ? editSnap.data() : undefined }
-      applyLandingSettings(legacyData, true)
-      const payload: Record<string, any> = {}
-      if (legacyData.utama) payload.utama = legacyData.utama
-      if (legacyData.winner) payload.winner = legacyData.winner
-      if (legacyData.views) payload.views = legacyData.views
-      if (legacyData.editHistory) payload.editHistory = legacyData.editHistory
-      if (Object.keys(payload).length) await setDoc(landingSettingsRef, payload, { merge: true })
+      if (settingsSnap.exists()) { applyLandingSettings(settingsSnap.data(), true); return }
     } catch { console.error("Gagal memuat konfigurasi landing") }
   }
 
@@ -226,7 +199,7 @@ export function useAdminDashboard() {
     const changes: string[] = []
     const fVal = (v: any) => (v === undefined || v === null || v === "" ? "-" : String(v))
     const fBool = (v: boolean) => (v ? "ON" : "OFF")
-    if (landingStatus.utama !== prevLandingStatus.utama) changes.push(`Landing utama: ${fBool(landingStatus.utama)} (sebelumnya ${fBool(prevLandingStatus.utama)})`)
+    if (landingStatus.showResults !== prevLandingStatus.showResults) changes.push(`Tampilkan hasil pemilihan: ${fBool(landingStatus.showResults)} (sebelumnya ${fBool(prevLandingStatus.showResults)})`)
     if (landingStatus.winner !== prevLandingStatus.winner) changes.push(`Formatur terpilih: ${fBool(landingStatus.winner)} (sebelumnya ${fBool(prevLandingStatus.winner)})`)
     ROLE_OPTIONS.forEach((role) => {
       const prevRole = prevRolesMap[role.key] || ""; const currRole = rolesMap[role.key] || ""
@@ -251,19 +224,19 @@ export function useAdminDashboard() {
       return acc
     }, {} as Record<string, string>)
     try {
-      const batch = writeBatch(db)
-      ROLE_OPTIONS.forEach((role) => {
-        const id = validRoles[role.key]
-        if (id) batch.set(doc(db, "JabatanFormatur", id), { Jabatan: sanitizedLabels[role.key] || role.label }, { merge: true })
-      })
-      await batch.commit()
-      await setDoc(doc(db, "LandingContent", "main"), { ...validatedContent }, { merge: true })
       const changes = collectLandingChanges()
-      await setDoc(landingSettingsRef, {
-        utama: { Status: landingStatus.utama ? "true" : "false", status: landingStatus.utama },
-        winner: { Status: landingStatus.winner ? "true" : "false", status: landingStatus.winner, Roles: validRoles, RoleLabels: sanitizedLabels },
-        editHistory: { akun: adminEmail || "admin", ApaYangDiEdit: changes.length ? changes.join(" | ") : "Tidak ada perubahan", timestamp: serverTimestamp() },
-      }, { merge: true })
+      await apiPost("/api/admin/landing", {
+        action: "save",
+        data: {
+          landingContent: validatedContent,
+          showResults: landingStatus.showResults,
+          winner: landingStatus.winner,
+          rolesMap: validRoles,
+          roleLabels: sanitizedLabels,
+          adminEmail: adminEmail || "admin",
+          changes: changes.length ? changes.join(" | ") : "Tidak ada perubahan",
+        },
+      })
       setPrevLandingStatus(landingStatus); setPrevRolesMap(validRoles); setPrevRoleLabels(sanitizedLabels)
       setRolesMap(validRoles); setRoleLabels(sanitizedLabels)
       setLandingContent(validatedContent as LandingContent); setPrevLandingContent(validatedContent as LandingContent)
