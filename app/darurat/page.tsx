@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { collection, getDocs, query, where, updateDoc, increment, doc } from "firebase/firestore"
+import { collection, getDocs, query, where } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { apiPost } from "@/lib/api-client"
 
 interface Candidate {
   id: string
@@ -54,14 +55,7 @@ export default function EmergencyPage() {
         return
       }
 
-      await updateDoc(doc(db, "Data_Calon_Formatur", selectedCandidate), {
-        JumlahVote: increment(1),
-      })
-
-      await updateDoc(participantDoc.ref, { StatusVoting: "sudah" })
-
-      await updateDoc(doc(db, "TotalSudahVoting", "Total"), { TotalSudahVoting: increment(1) })
-      await updateDoc(doc(db, "TotalBelumVoting", "Total"), { TotalBelumVoting: increment(-1) })
+      await apiPost("/api/vote/emergency", { voterId: participantDoc.id, candidateId: selectedCandidate })
 
       setMessage("Sukses: Suara berhasil disimpan (Mode Darurat).")
       setNib("")

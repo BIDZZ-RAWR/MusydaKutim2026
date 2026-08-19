@@ -1,6 +1,11 @@
 import { z } from "zod"
-import type { NavItem, RoleOption } from "./types"
+import type { NavItem, RoleOption, LandingStatus } from "./types"
 import { sanitizeText } from "@/lib/utils"
+
+export const DEFAULT_LANDING_STATUS: LandingStatus = {
+  showResults: true,
+  winner: false,
+}
 
 export const ROLE_OPTIONS: RoleOption[] = [
   { key: "ketuaUmum", label: "Ketua Umum" },
@@ -119,6 +124,12 @@ export const bilikSchema = z
     message: "Nomor handphone tidak valid",
     path: ["handphone"],
   })
+
+export const bilikSimpleSchema = z.object({
+  id: z.string().trim().regex(/^\d{1,3}$/, "ID bilik harus berupa angka 1-3 digit"),
+  name: z.string().optional().transform((val) => sanitizeText(val || "", 60)),
+  monitor: z.string().optional().transform((val) => sanitizeText(val || "", 60)),
+})
 
 export const pesertaSchema = z.object({
   Nama: textContent("Nama peserta", 80),

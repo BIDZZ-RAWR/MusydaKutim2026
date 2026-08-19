@@ -66,7 +66,7 @@ export interface LandingContent {
 }
 
 export interface LandingStatus {
-  utama: boolean
+  showResults: boolean
   winner: boolean
 }
 

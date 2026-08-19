@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { collection, onSnapshot, doc, setDoc, increment, serverTimestamp, getDoc } from "firebase/firestore"
+import { collection, onSnapshot, doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
-import { normalizeStatus } from "@/lib/validation"
+import { apiPost } from "@/lib/api-client"
 
 export interface Candidate {
   id: string
@@ -80,7 +80,8 @@ export function useLandingPage() {
   const [totalSudah, setTotalSudah] = useState(0)
   const [totalBelum, setTotalBelum] = useState(0)
   const [landingContent, setLandingContent] = useState(DEFAULT_LANDING)
-  const [landingStatus, setLandingStatus] = useState({ utama: true, winner: false })
+  const [showResults, setShowResults] = useState(true)
+  const [showWinner, setShowWinner] = useState(false)
   const [rolesMap, setRolesMap] = useState<Record<string, string>>({
     ketuaUmum: "", sekretarisUmum: "", bendaharaUmum: "", ketuaOrganisasi: "",
     ketuaPerkaderan: "", ketuaKDI: "", ketuaASBO: "",
@@ -103,12 +104,13 @@ export function useLandingPage() {
 
   const applyLandingSettings = (data: any) => {
     if (!data) return
-    const utamaData = data.utama || data.Utama || {}
     const winnerData = data.winner || data.FormaturTerpilih || {}
-    setLandingStatus({
-      utama: normalizeStatus(utamaData.Status ?? utamaData.status ?? utamaData, true),
-      winner: normalizeStatus(winnerData.Status ?? winnerData.status ?? winnerData, false),
-    })
+    setShowResults(data.showResults !== undefined ? Boolean(data.showResults) : true)
+    setShowWinner(
+      winnerData.Status !== undefined
+        ? winnerData.Status === true || winnerData.Status === "true"
+        : false,
+    )
     const rolesData = winnerData.Roles || winnerData.roles
     if (rolesData) setRolesMap((prev) => ({ ...prev, ...rolesData }))
     const labelsData = winnerData.RoleLabels || winnerData.roleLabels
@@ -127,15 +129,10 @@ export function useLandingPage() {
           getDoc(doc(db, "LandingPage", "Utama")),
           getDoc(doc(db, "LandingPage", "FormaturTerpilih")),
         ])
-        const legacyData = {
-          utama: utamaSnap.exists() ? utamaSnap.data() : undefined,
-          winner: winnerSnap.exists() ? winnerSnap.data() : undefined,
+        const winnerData = winnerSnap.exists() ? winnerSnap.data() : undefined
+        if (winnerData) {
+          applyLandingSettings({ winner: winnerData })
         }
-        applyLandingSettings(legacyData)
-        const payload: Record<string, any> = {}
-        if (legacyData.utama) payload.utama = legacyData.utama
-        if (legacyData.winner) payload.winner = legacyData.winner
-        if (Object.keys(payload).length) await setDoc(landingSettingsRef, payload, { merge: true })
       } catch (error) {
         console.error("Gagal memuat status landing legacy", error)
       }
@@ -152,10 +149,7 @@ export function useLandingPage() {
     })
     const unsubSettings = onSnapshot(landingSettingsRef, (snap) => {
       if (snap.exists()) {
-        const data = snap.data()
-        applyLandingSettings(data)
-        const hasStatus = Boolean(data?.utama || data?.Utama || data?.winner || data?.FormaturTerpilih)
-        if (!hasStatus) loadLegacySettings()
+        applyLandingSettings(snap.data())
       } else {
         loadLegacySettings()
       }
@@ -177,14 +171,12 @@ export function useLandingPage() {
 
   useEffect(() => {
     if (hasCountedView.current) return
-    setDoc(landingSettingsRef, { views: { Jumlah: increment(1), lastView: serverTimestamp() } }, { merge: true })
+    apiPost("/api/public/view", {}).catch(() => {})
     hasCountedView.current = true
   }, [])
 
   const totalPeserta = totalSudah + totalBelum
   const percentage = totalPeserta > 0 ? ((totalSudah / totalPeserta) * 100).toFixed(1) : "0"
-  const showLanding = landingStatus.utama !== false
-  const showWinner = landingStatus.winner === true
 
   const chartData = candidates.map((c) => ({
     name: `${landingContent.candidateBadgePrefix || "Calon"} ${c.id}`,
@@ -211,12 +203,11 @@ export function useLandingPage() {
     totalBelum,
     percentage,
     landingContent,
-    landingStatus,
+    showResults,
+    showWinner,
     rolesMap,
     roleLabels,
     isMobileView,
-    showLanding,
-    showWinner,
     chartData,
     roleList,
     sizeByDevice,

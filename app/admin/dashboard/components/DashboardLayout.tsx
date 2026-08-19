@@ -1,10 +1,12 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   Menu, X, LayoutDashboard, Users, ClipboardList, Vote, Globe, LogOut,
 } from "lucide-react"
+import { apiPost } from "@/lib/api-client"
 import type { NavItem } from "../types"
 
 const iconMap: Record<string, React.ElementType> = {
@@ -54,6 +56,14 @@ export function DashboardLayout({
     }
   }, [mobileMenuOpen, setMobileMenuOpen])
 
+  const router = useRouter()
+  const handleLogout = async () => {
+    try {
+      await apiPost("/api/auth/logout", {})
+    } catch { /* ignore */ }
+    router.push("/login")
+  }
+
   return (
     <div className="min-h-screen bg-stone-50 flex">
       {/* Desktop Sidebar */}
@@ -92,7 +102,7 @@ export function DashboardLayout({
             )
           })}
         </nav>
-        <div className="px-3 py-4 border-t border-stone-100">
+        <div className="px-3 py-4 border-t border-stone-100 space-y-2">
           <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-stone-50">
             <div className="h-7 w-7 rounded-full bg-stone-300 flex items-center justify-center text-xs font-semibold text-stone-600">
               A
@@ -102,6 +112,14 @@ export function DashboardLayout({
               <p className="text-[10px] text-stone-500">Super Admin</p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 transition-all duration-200"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Keluar</span>
+          </button>
         </div>
       </aside>
 
@@ -193,7 +211,17 @@ export function DashboardLayout({
             {children}
           </div>
         </main>
-      </div>
-    </div>
+            </div>
+            <div className="pt-2 border-t border-stone-100">
+              <button
+                type="button"
+                onClick={() => { handleLogout(); setMobileMenuOpen(false) }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 transition-all duration-200"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Keluar</span>
+              </button>
+            </div>
+          </div>
   )
 }

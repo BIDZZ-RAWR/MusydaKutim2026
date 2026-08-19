@@ -46,6 +46,7 @@
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
     "firebase": "latest",
+    "firebase-admin": "^14.0.0",
     "html5-qrcode": "latest",
     "input-otp": "1.4.1",
     "iron-session": "^8.0.4",

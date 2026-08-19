@@ -1,20 +1,18 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useParams } from "next/navigation"
 import {
   doc,
   onSnapshot,
-  updateDoc,
-  increment,
   collection,
   query,
   where,
   getDocs,
-  writeBatch,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { logError } from "@/lib/logger"
+import { apiPost } from "@/lib/api-client"
 
 interface Candidate {
   id: string
@@ -40,7 +38,7 @@ export function useMonitor(onToast: (variant: string, title: string, description
   useEffect(() => {
     const sendHeartbeat = async () => {
       try {
-        await updateDoc(doc(db, "BilikVoting", bilikId), { heartbeat: new Date() })
+        await apiPost("/api/vote/heartbeat", { bilikId })
       } catch (error) {
         console.error("Heartbeat failed:", error)
       }
@@ -48,11 +46,7 @@ export function useMonitor(onToast: (variant: string, title: string, description
 
     const resetStatus = async () => {
       try {
-        await updateDoc(doc(db, "BilikVoting", bilikId), {
-          status: "idle",
-          activeVoterName: "",
-          activeVoterNIB: "",
-        })
+        await apiPost("/api/vote/reset", { bilikId })
       } catch (error) {
         console.error("Failed to reset status:", error)
       }
@@ -110,30 +104,14 @@ export function useMonitor(onToast: (variant: string, title: string, description
     setIsSubmitting(true)
 
     try {
-      const batch = writeBatch(db)
       const q = query(collection(db, "Data_Peserta"), where("NIB", "==", bilikState.activeVoterNIB))
       const participantSnapshot = await getDocs(q)
-      if (!participantSnapshot.empty) {
-        const participantDocRef = participantSnapshot.docs[0].ref
-        batch.update(participantDocRef, { StatusVoting: "sudah" })
-      } else {
+      if (participantSnapshot.empty) {
         throw new Error(`Peserta dengan NIB ${bilikState.activeVoterNIB} tidak ditemukan saat menyimpan vote`)
       }
+      const voterId = participantSnapshot.docs[0].id
 
-      selectedCandidates.forEach((cid) => {
-        const candidateRef = doc(db, "Data_Calon_Formatur", cid)
-        batch.update(candidateRef, { JumlahVote: increment(1) })
-      })
-
-      batch.update(doc(db, "TotalSudahVoting", "Total"), { TotalSudahVoting: increment(1) })
-      batch.update(doc(db, "TotalBelumVoting", "Total"), { TotalBelumVoting: increment(-1) })
-      batch.update(doc(db, "BilikVoting", bilikId), {
-        status: "idle",
-        activeVoterName: "",
-        activeVoterNIB: "",
-      })
-
-      await batch.commit()
+      await apiPost("/api/vote/submit", { bilikId, voterId, candidateIds: selectedCandidates })
       setSelectedCandidates([])
 
       onToast("success", "Berhasil!", "Suara anda telah tersimpan.")

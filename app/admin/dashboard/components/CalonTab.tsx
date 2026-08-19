@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { doc, setDoc, updateDoc, deleteDoc, writeBatch, getDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +15,7 @@ import { uploadToCloudinary } from "../cloudinary"
 import { EmptyState } from "./EmptyState"
 import { ConfirmDialog } from "./ConfirmDialog"
 import { validate } from "@/lib/validation"
+import { apiPost } from "@/lib/api-client"
 
 interface CalonTabProps {
   candidateList: Candidate[]
@@ -73,9 +72,7 @@ export function CalonTab({ candidateList, onRefresh }: CalonTabProps) {
       toast.error(`Nomor urut / ID Calon "${validated.id}" sudah digunakan.`); return
     }
     try {
-      await setDoc(doc(db, "Data_Calon_Formatur", validated.id), {
-        NamaCalonFormatur: validated.name, FotoCalonFormatur: validated.photo, JumlahVote: 0,
-      }, { merge: true })
+      await apiPost("/api/admin/calon", { action: "create", data: { id: validated.id, name: validated.name, photo: validated.photo } })
       toast.success("Data calon formatur berhasil disimpan")
       setCandidateForm({ id: "", name: "", photo: "" })
       onRefresh()
@@ -88,21 +85,11 @@ export function CalonTab({ candidateList, onRefresh }: CalonTabProps) {
     if (!validated) return
     const oldId = validated.id; const targetId = validated.newId || validated.id
     const isChangingId = targetId !== oldId
-    const existingOld = candidateList.find((c) => c.id === oldId)
-    const payload = { NamaCalonFormatur: validated.NamaCalonFormatur, FotoCalonFormatur: validated.FotoCalonFormatur || "", JumlahVote: existingOld?.JumlahVote ?? 0 }
     try {
       if (!isChangingId) {
-        await updateDoc(doc(db, "Data_Calon_Formatur", oldId), payload)
+        await apiPost("/api/admin/calon", { action: "update", data: { id: oldId, name: validated.NamaCalonFormatur, photo: validated.FotoCalonFormatur } })
       } else {
-        const batch = writeBatch(db)
-        batch.set(doc(db, "Data_Calon_Formatur", targetId), payload)
-        batch.delete(doc(db, "Data_Calon_Formatur", oldId))
-        const [oldJabatanSnap, targetJabatanSnap] = await Promise.all([
-          getDoc(doc(db, "JabatanFormatur", oldId)), getDoc(doc(db, "JabatanFormatur", targetId)),
-        ])
-        if (targetJabatanSnap.exists()) batch.delete(doc(db, "JabatanFormatur", targetId))
-        if (oldJabatanSnap.exists()) { batch.set(doc(db, "JabatanFormatur", targetId), oldJabatanSnap.data()); batch.delete(doc(db, "JabatanFormatur", oldId)) }
-        await batch.commit()
+        await apiPost("/api/admin/calon", { action: "migrate", data: { oldId, newId: targetId, name: validated.NamaCalonFormatur, photo: validated.FotoCalonFormatur } })
       }
       toast.success(`Data calon diperbarui${isChangingId ? ` (ID ${oldId} → ${targetId})` : ""}`)
       setEditingCandidate(null)
@@ -114,7 +101,7 @@ export function CalonTab({ candidateList, onRefresh }: CalonTabProps) {
     openConfirm({
       title: "Hapus Calon?",
       description: "Data calon formatur akan dihapus permanen.",
-      onConfirm: async () => { await deleteDoc(doc(db, "Data_Calon_Formatur", id)); onRefresh(); toast.success("Calon berhasil dihapus") },
+      onConfirm: async () => { await apiPost("/api/admin/calon", { action: "delete", data: { id } }); onRefresh(); toast.success("Calon berhasil dihapus") },
     })
   }
 

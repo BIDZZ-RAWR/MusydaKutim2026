@@ -67,10 +67,6 @@ export default function AdminDashboardPage() {
           <PanitiaTab
             panitiaList={panitiaList}
             bilikList={bilikList}
-            viewStats={viewStats}
-            editHistory={editHistory}
-            showFullHistory={showFullHistory}
-            setShowFullHistory={setShowFullHistory}
             onRefresh={handleRefreshAll}
           />
         )}

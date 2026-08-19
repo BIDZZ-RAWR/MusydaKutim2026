@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Globe, ChevronDown, ChevronRight, Eye, EyeOff } from "lucide-react"
+import { Globe, ChevronDown, ChevronRight } from "lucide-react"
 import type { LandingContent, LandingStatus, RolesMap, RoleLabels, Candidate } from "../types"
 import { ROLE_OPTIONS } from "../constants"
 
@@ -18,7 +18,7 @@ interface LandingTabProps {
   candidateList: Candidate[]
   savingLanding: boolean
   onContentChange: (key: string, value: string | boolean) => void
-  onStatusChange: (key: "utama" | "winner", value: boolean) => void
+  onStatusChange: (key: "showResults" | "winner", value: boolean) => void
   onRoleChange: (roleKey: string, candidateId: string) => void
   onLabelChange: (roleKey: string, label: string) => void
   onSaveAll: () => void
@@ -126,18 +126,18 @@ export function LandingTab({
         <Card className="xl:col-span-2 border-stone-200 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-stone-800 text-sm">Visibilitas Landing</CardTitle>
-            <CardDescription>Aktifkan atau sembunyikan halaman landing & formatur terpilih</CardDescription>
+            <CardDescription>Atur tampilan landing page untuk publik</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <ToggleCard
-              label="Landing Page Utama"
-              description="Halaman publik utama"
-              checked={landingStatus.utama}
-              onChange={(v) => onStatusChange("utama", v)}
+              label="Tampilkan Hasil Pemilihan"
+              description="Perolehan suara & grafik"
+              checked={landingStatus.showResults}
+              onChange={(v) => onStatusChange("showResults", v)}
             />
             <ToggleCard
-              label="Halaman Formatur Terpilih"
-              description="Tampilkan hasil akhir"
+              label="Tampilkan Formatur Terpilih"
+              description="Struktur pemenang tiap jabatan"
               checked={landingStatus.winner}
               onChange={(v) => onStatusChange("winner", v)}
             />
@@ -153,15 +153,15 @@ export function LandingTab({
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-stone-600">Landing</span>
+              <span className="text-stone-600">Hasil Pemilihan</span>
               <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium ring-1 ring-inset ${
-                landingStatus.utama ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20" : "bg-stone-100 text-stone-600 ring-stone-500/20"
+                landingStatus.showResults ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20" : "bg-stone-100 text-stone-600 ring-stone-500/20"
               }`}>
-                {landingStatus.utama ? "Aktif" : "Nonaktif"}
+                {landingStatus.showResults ? "Aktif" : "Nonaktif"}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-stone-600">Formatur</span>
+              <span className="text-stone-600">Formatur Terpilih</span>
               <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium ring-1 ring-inset ${
                 landingStatus.winner ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20" : "bg-stone-100 text-stone-600 ring-stone-500/20"
               }`}>

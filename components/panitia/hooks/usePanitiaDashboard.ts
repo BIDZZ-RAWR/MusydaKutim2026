@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { doc, updateDoc, getDocs, query, collection, where, onSnapshot, limit } from "firebase/firestore"
+import { doc, onSnapshot, getDocs, query, collection, where, limit } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { logError, getCameraErrorMessage } from "@/lib/logger"
+import { apiPost } from "@/lib/api-client"
 
 export function usePanitiaDashboard() {
   const params = useParams()
@@ -81,13 +82,10 @@ export function usePanitiaDashboard() {
       const participantDoc = querySnapshot.docs[0]
       const participantData = participantDoc.data()
 
-      const bilikRef = doc(db, "BilikVoting", panitiaId)
-
-      await updateDoc(bilikRef, {
-        activeVoterNIB: nib,
-        activeVoterName: participantData.NamaPeserta,
-        status: "voting_active",
-        timestamp: new Date(),
+      await apiPost("/api/vote/activate", {
+        bilikId: panitiaId,
+        voterNIB: nib,
+        voterName: participantData.NamaPeserta,
       })
 
       setStatus("success")

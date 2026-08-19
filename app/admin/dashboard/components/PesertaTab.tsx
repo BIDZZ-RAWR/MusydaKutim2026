@@ -1,16 +1,6 @@
 "use client"
 
 import { useState, useRef, useMemo } from "react"
-import {
-  collection,
-  getDocs,
-  addDoc,
-  doc,
-  updateDoc,
-  deleteDoc,
-  writeBatch,
-} from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,6 +20,7 @@ import { BulkActionBar } from "./BulkActionBar"
 import { ConfirmDialog } from "./ConfirmDialog"
 import { QrCodeDialog } from "./QrCodeDialog"
 import { validate } from "@/lib/validation"
+import { apiPost } from "@/lib/api-client"
 
 interface PesertaTabProps {
   pesertaList: Peserta[]
@@ -86,12 +77,7 @@ export function PesertaTab({
     const validated = validate<{ Nama: string; Pimpinan: string; NIB: string }>(pesertaSchema, newPeserta)
     if (!validated) return
     try {
-      await addDoc(collection(db, "Data_Peserta"), {
-        NamaPeserta: validated.Nama,
-        Pimpinan: validated.Pimpinan,
-        NIB: validated.NIB,
-        StatusVoting: "belum",
-      })
+      await apiPost("/api/admin/peserta", { action: "create", data: validated })
       toast.success("Peserta berhasil ditambahkan")
       setNewPeserta({ Nama: "", Pimpinan: "", NIB: "" })
       onReset()
@@ -101,10 +87,9 @@ export function PesertaTab({
   const handleEditPeserta = async () => {
     if (!editingPeserta) return
     try {
-      await updateDoc(doc(db, "Data_Peserta", editingPeserta.id), {
-        NamaPeserta: editingPeserta.NamaPeserta,
-        Pimpinan: editingPeserta.Pimpinan,
-        NIB: editingPeserta.NIB,
+      await apiPost("/api/admin/peserta", {
+        action: "update",
+        data: { id: editingPeserta.id, Nama: editingPeserta.NamaPeserta, Pimpinan: editingPeserta.Pimpinan, NIB: editingPeserta.NIB },
       })
       toast.success("Data peserta berhasil diperbarui")
       setEditingPeserta(null)
@@ -116,7 +101,7 @@ export function PesertaTab({
     openConfirm({
       title: "Hapus Peserta?", description: "Data peserta akan dihapus secara permanen.",
       onConfirm: async () => {
-        await deleteDoc(doc(db, "Data_Peserta", id))
+        await apiPost("/api/admin/peserta", { action: "delete", data: { id } })
         onReset()
         setSelectedPesertaIds((prev) => prev.filter((pid) => pid !== id))
         toast.success("Peserta berhasil dihapus")
@@ -145,9 +130,7 @@ export function PesertaTab({
       title: "Hapus Peserta Terpilih?",
       description: `Anda akan menghapus ${selectedPesertaIds.length} peserta sekaligus.`,
       onConfirm: async () => {
-        const batch = writeBatch(db)
-        selectedPesertaIds.forEach((pid) => batch.delete(doc(db, "Data_Peserta", pid)))
-        await batch.commit()
+        await apiPost("/api/admin/peserta", { action: "bulkDelete", data: { ids: selectedPesertaIds } })
         setSelectedPesertaIds([])
         onReset()
         toast.success(`${selectedPesertaIds.length} peserta berhasil dihapus`)
@@ -217,7 +200,7 @@ export function PesertaTab({
         const idxNIB = findIdx("nib", "no induk", "no_induk", "id")
         const idxPimpinan = findIdx("pimpinan", "jabatan", "posisi")
         const defaultOffset = headers[0]?.match(/^no\b/i) ? 1 : 0
-        const batch = writeBatch(db)
+        const items: { Nama: string; Pimpinan: string; NIB: string }[] = []
         let count = 0
         const invalidRows: string[] = []
         for (let i = 1; i < lines.length; i++) {
@@ -231,16 +214,11 @@ export function PesertaTab({
           if (!Pimpinan) Pimpinan = "-"
           const parsed = pesertaSchema.safeParse({ Nama, Pimpinan, NIB })
           if (!parsed.success) { invalidRows.push(`Baris ${i + 1}: ${parsed.error.errors[0]?.message || "Data tidak valid"}`); continue }
-          const newRef = doc(collection(db, "Data_Peserta"))
-          batch.set(newRef, {
-            NamaPeserta: parsed.data.Nama,
-            Pimpinan: parsed.data.Pimpinan,
-            NIB: parsed.data.NIB,
-            StatusVoting: "belum",
-          })
+          items.push({ Nama: parsed.data.Nama, Pimpinan: parsed.data.Pimpinan, NIB: parsed.data.NIB })
           count++
         }
-        await batch.commit()
+        if (items.length === 0) { toast.error("Tidak ada data valid untuk diimport"); return }
+        await apiPost("/api/admin/peserta", { action: "bulkImport", data: { items } })
         toast.success(`Berhasil import ${count} data peserta!${invalidRows.length ? `\nLewati ${invalidRows.length} baris bermasalah.` : ""}`)
         if (invalidRows.length) console.warn("Baris CSV invalid:", invalidRows.join("\n"))
         onReset()

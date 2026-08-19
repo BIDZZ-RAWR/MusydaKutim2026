@@ -1,6 +1,5 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import WinnerSection from "@/components/landing/WinnerSection"
 import HeroStats from "@/components/landing/HeroStats"
@@ -16,7 +15,7 @@ export default function LandingPage() {
     totalBelum,
     percentage,
     landingContent,
-    showLanding,
+    showResults,
     showWinner,
     chartData,
     roleList,
@@ -27,19 +26,16 @@ export default function LandingPage() {
     COLORS,
   } = useLandingPage()
 
-  if (!showLanding && !showWinner) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-700">
-        <Card className="p-6 shadow-lg">
-          <CardTitle>Halaman dinonaktifkan</CardTitle>
-          <p className="text-sm text-gray-500 mt-2">Landing page dimatikan oleh admin.</p>
-        </Card>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 px-4 sm:px-6 lg:px-10 max-w-6xl mx-auto">
+      <HeroStats
+        landingContent={landingContent}
+        totalPeserta={totalPeserta}
+        totalSudah={totalSudah}
+        totalBelum={totalBelum}
+        percentage={percentage}
+      />
+
       {showWinner && (
         <WinnerSection
           landingContent={landingContent}
@@ -52,39 +48,30 @@ export default function LandingPage() {
         />
       )}
 
-      {showLanding && (
-        <>
-          <HeroStats
-            landingContent={landingContent}
-            totalPeserta={totalPeserta}
-            totalSudah={totalSudah}
-            totalBelum={totalBelum}
-            percentage={percentage}
-          />
+      <CandidatesGrid
+        candidates={candidates}
+        landingContent={landingContent}
+        sizeByDevice={sizeByDevice}
+        showResults={showResults}
+      />
 
-          <CandidatesGrid
-            candidates={candidates}
-            landingContent={landingContent}
-            sizeByDevice={sizeByDevice}
-          />
-
-          <ChartSection
-            chartData={chartData}
-            landingContent={landingContent}
-            sizeByDevice={sizeByDevice}
-            colors={COLORS}
-          />
-
-          <div className="flex justify-center gap-4 pt-8">
-            <Link
-              href="/login"
-              className="text-sm text-gray-500 hover:text-green-600 underline border-background border-solid border-0 font-semibold"
-            >
-              {landingContent.loginLinkText}
-            </Link>
-          </div>
-        </>
+      {showResults && (
+        <ChartSection
+          chartData={chartData}
+          landingContent={landingContent}
+          sizeByDevice={sizeByDevice}
+          colors={COLORS}
+        />
       )}
+
+      <div className="flex justify-center gap-4 pt-8">
+        <Link
+          href="/login"
+          className="text-sm text-gray-500 hover:text-green-600 underline border-background border-solid border-0 font-semibold"
+        >
+          {landingContent.loginLinkText}
+        </Link>
+      </div>
     </div>
   )
 }

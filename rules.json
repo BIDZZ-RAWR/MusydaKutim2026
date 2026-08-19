@@ -2,69 +2,62 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Data_Admin: siapa pun boleh baca; tulis dibatasi hanya ke field tertentu
+    // Semua koleksi: publik boleh baca, hanya Admin SDK yang boleh nulis
     match /Data_Admin/{docId} {
       allow get, list: if true;
-      allow create, update: if request.resource.data.keys().hasOnly(["Email", "Password", "Role"]);
-      allow delete: if true;
+      allow create, update, delete: if false;
     }
 
-    // Data_Siswa (DPT - legacy)
     match /Data_Siswa/{docId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
 
-    // Data_Peserta (DPT) — menggantikan Data_Siswa
     match /Data_Peserta/{docId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
 
-    // Calon Formatur
     match /Data_Calon_Formatur/{docId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
 
-    // Bilik Voting
     match /BilikVoting/{docId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
 
-    // Total voting
     match /TotalSudahVoting/{docId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
+
     match /TotalBelumVoting/{docId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
 
-    // Landing page content/status
     match /LandingContent/{docId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
+
     match /LandingPage/{docId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
 
-    // Jabatan formatur terpilih
     match /JabatanFormatur/{docId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
 
-    // Error log
     match /error/{docId} {
       allow get, list, create, update, delete: if true;
     }
 
-    // Koleksi lain: blokir
+    // Koleksi lain: blokir total
     match /{document=**} {
       allow read, write: if false;
     }

@@ -2,12 +2,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
 
 interface CandidatesGridProps {
-  candidates: { id: string; NamaCalonFormatur: string; FotoCalonFormatur?: string }[]
+  candidates: { id: string; NamaCalonFormatur: string; FotoCalonFormatur?: string; JumlahVote?: number }[]
   landingContent: any
   sizeByDevice: (desktopKey: string, mobileKey: string) => number
+  showResults: boolean
 }
 
-export default function CandidatesGrid({ candidates, landingContent, sizeByDevice }: CandidatesGridProps) {
+export default function CandidatesGrid({ candidates, landingContent, sizeByDevice, showResults }: CandidatesGridProps) {
   return (
     <section>
       <h2
@@ -72,6 +73,11 @@ export default function CandidatesGrid({ candidates, landingContent, sizeByDevic
               >
                 {landingContent.candidateSubtitle}
               </p>
+              {showResults && (
+                <p className="text-xs text-emerald-700 font-semibold mt-1">
+                  {(candidate as any).JumlahVote || 0} Suara
+                </p>
+              )}
             </CardContent>
           </Card>
         ))}
