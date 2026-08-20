@@ -66,7 +66,12 @@ export function OverviewTab({
   const displayHistory = isLongHistory && !showFullHistory ? `${historyText.slice(0, 160)}...` : historyText
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      <div className="space-y-1">
+        <h1 className="text-lg sm:text-xl font-semibold text-stone-900">Ringkasan</h1>
+        <p className="text-sm text-stone-500">Statistik voting dan aktivitas terbaru.</p>
+      </div>
+
       <SummaryCards
         panitiaCount={panitiaCount}
         pesertaCount={pesertaTotalCount}
@@ -96,7 +101,7 @@ export function OverviewTab({
                 description="Data perolehan suara akan muncul setelah kandidat ditambahkan."
               />
             ) : (
-              <div className="h-[280px] w-full">
+              <div className="h-[240px] sm:h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} barCategoryGap="20%" margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                     <XAxis

@@ -216,41 +216,41 @@ export function CalonTab({ candidateList, onRefresh }: CalonTabProps) {
                               <Dialog open={editingCandidate?.id === c.id}
                                 onOpenChange={(open) => !open && setEditingCandidate(null)}>
                                 <DialogTrigger asChild>
-                                  <Button variant="outline" size="icon" className="h-8 w-8"
-                                    onClick={() => setEditingCandidate({ ...c, newId: c.id })}>
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader><DialogTitle>Edit Calon {c.id}</DialogTitle></DialogHeader>
-                                  <div className="space-y-3 py-2">
-                                    <div className="space-y-2">
-                                      <Label className="text-xs text-stone-600">Nomor Urut / ID</Label>
-                                      <Input value={editingCandidate?.newId || ""}
-                                        onChange={(e) => setEditingCandidate({ ...editingCandidate, newId: e.target.value })} maxLength={4} />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-xs text-stone-600">Nama</Label>
-                                      <Input value={editingCandidate?.NamaCalonFormatur || ""}
-                                        onChange={(e) => setEditingCandidate({ ...editingCandidate, NamaCalonFormatur: e.target.value })} maxLength={80} />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-xs text-stone-600">Link Foto</Label>
-                                      <Input value={editingCandidate?.FotoCalonFormatur || ""}
-                                        onChange={(e) => setEditingCandidate({ ...editingCandidate, FotoCalonFormatur: e.target.value })} type="url" />
-                                      <input type="file" accept="image/*" ref={editFileInputRef}
-                                        onChange={(e) => handleFileSelect(e, "edit")} className="hidden" id="edit-photo-upload" />
-                                      <Label htmlFor="edit-photo-upload"
-                                        className="flex items-center justify-center gap-2 h-10 rounded-xl border-2 border-dashed border-stone-300 cursor-pointer hover:bg-stone-50 text-xs text-stone-500">
-                                        <Upload className="h-4 w-4" /> Upload dari perangkat
-                                      </Label>
-                                      {editingCandidateUploading && <p className="text-xs text-emerald-600 animate-pulse">Mengunggah...</p>}
-                                    </div>
-                                    <Button onClick={handleUpdateCandidate} className="w-full">Simpan Perubahan</Button>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                              <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteCandidate(c.id)}>
+                                   <Button variant="outline" size="icon" className="h-9 w-9"
+                                     onClick={() => setEditingCandidate({ ...c, newId: c.id })}>
+                                     <Pencil className="h-3.5 w-3.5" />
+                                   </Button>
+                                 </DialogTrigger>
+                                 <DialogContent>
+                                   <DialogHeader><DialogTitle>Edit Calon {c.id}</DialogTitle></DialogHeader>
+                                   <div className="space-y-3 py-2">
+                                     <div className="space-y-2">
+                                       <Label className="text-xs text-stone-600">Nomor Urut / ID</Label>
+                                       <Input value={editingCandidate?.newId || ""}
+                                         onChange={(e) => setEditingCandidate({ ...editingCandidate, newId: e.target.value })} maxLength={4} />
+                                     </div>
+                                     <div className="space-y-2">
+                                       <Label className="text-xs text-stone-600">Nama</Label>
+                                       <Input value={editingCandidate?.NamaCalonFormatur || ""}
+                                         onChange={(e) => setEditingCandidate({ ...editingCandidate, NamaCalonFormatur: e.target.value })} maxLength={80} />
+                                     </div>
+                                     <div className="space-y-2">
+                                       <Label className="text-xs text-stone-600">Link Foto</Label>
+                                       <Input value={editingCandidate?.FotoCalonFormatur || ""}
+                                         onChange={(e) => setEditingCandidate({ ...editingCandidate, FotoCalonFormatur: e.target.value })} type="url" />
+                                       <input type="file" accept="image/*" ref={editFileInputRef}
+                                         onChange={(e) => handleFileSelect(e, "edit")} className="hidden" id="edit-photo-upload" />
+                                       <Label htmlFor="edit-photo-upload"
+                                         className="flex items-center justify-center gap-2 h-10 rounded-xl border-2 border-dashed border-stone-300 cursor-pointer hover:bg-stone-50 text-xs text-stone-500">
+                                         <Upload className="h-4 w-4" /> Upload dari perangkat
+                                       </Label>
+                                       {editingCandidateUploading && <p className="text-xs text-emerald-600 animate-pulse">Mengunggah...</p>}
+                                     </div>
+                                     <Button onClick={handleUpdateCandidate} className="w-full">Simpan Perubahan</Button>
+                                   </div>
+                                 </DialogContent>
+                               </Dialog>
+                               <Button variant="destructive" size="icon" className="h-9 w-9" onClick={() => handleDeleteCandidate(c.id)}>
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
@@ -284,13 +284,13 @@ export function CalonTab({ candidateList, onRefresh }: CalonTabProps) {
                         <Dialog open={editingCandidate?.id === c.id}
                           onOpenChange={(open) => !open && setEditingCandidate(null)}>
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="flex-1 h-8 text-xs"
+                            <Button variant="outline" size="sm" className="flex-1 h-9 text-xs"
                               onClick={() => setEditingCandidate({ ...c, newId: c.id })}>
                               <Pencil className="h-3 w-3 mr-1" /> Edit
                             </Button>
                           </DialogTrigger>
                         </Dialog>
-                        <Button variant="destructive" size="sm" className="h-8 text-xs"
+                        <Button variant="destructive" size="sm" className="h-9 text-xs"
                           onClick={() => handleDeleteCandidate(c.id)}>
                           <Trash2 className="h-3 w-3 mr-1" /> Hapus
                         </Button>

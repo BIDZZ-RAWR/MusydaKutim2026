@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Download, Pencil, Eye, FileSpreadsheet, Plus, Search, RotateCcw, X, Trash2 } from "lucide-react"
+import { Download, Pencil, Eye, FileSpreadsheet, Plus, Search, RotateCcw, X, Trash2, LayoutGrid, List } from "lucide-react"
 import { toast } from "sonner"
-import QRCode from "qrcode"
 import type { Peserta } from "../types"
+import { generateQrCodeUrl, generateA4Sheets } from "./qrGenerator"
 import { pesertaSchema } from "../constants"
 import { useDebounce } from "../hooks/useDebounce"
 import { StatusBadge } from "./StatusBadge"
@@ -47,6 +47,7 @@ export function PesertaTab({
   const [pesertaSearch, setPesertaSearch] = useState("")
   const [viewQrPeserta, setViewQrPeserta] = useState<Peserta | null>(null)
   const [qrCodeUrl, setQrCodeUrl] = useState("")
+  const [viewMode, setViewMode] = useState<"table" | "card">("table")
   const [confirmState, setConfirmState] = useState<{
     open: boolean
     title: string
@@ -140,24 +141,23 @@ export function PesertaTab({
 
   const handleBulkDownloadQR = async () => {
     const selected = filteredPeserta.filter((p) => selectedPesertaIds.includes(p.id))
-    for (const peserta of selected) {
-      try {
-        const qrData = String(peserta.NIB)
-        const url = await QRCode.toDataURL(qrData, { width: 300, margin: 2 })
+    if (selected.length === 0) return
+    try {
+      const sheets = await generateA4Sheets(selected)
+      for (let i = 0; i < sheets.length; i++) {
         const link = document.createElement("a")
-        link.href = url
-        link.download = `QR_${peserta.NamaPeserta}_${peserta.NIB}.png`
+        link.href = sheets[i]
+        link.download = `QR_A4_halaman_${i + 1}.png`
         link.click()
         await new Promise((r) => setTimeout(r, 200))
-      } catch { /* skip */ }
-    }
-    toast.success(`Mendownload ${selected.length} QR Code`)
+      }
+      toast.success(`Mendownload ${sheets.length} lembar A4 (${selected.length} QR Code)`)
+    } catch { toast.error("Gagal membuat lembar QR") }
   }
 
   const generateQRCode = async (peserta: Peserta, action: "download" | "view") => {
     try {
-      const qrData = String(peserta.NIB)
-      const url = await QRCode.toDataURL(qrData, { width: 300, margin: 2 })
+      const url = await generateQrCodeUrl(peserta.NIB, peserta.NamaPeserta)
       if (action === "download") {
         const link = document.createElement("a")
         link.href = url
@@ -290,17 +290,27 @@ export function PesertaTab({
                   </CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="relative">
+                  <div className="relative flex-1 min-w-0 sm:flex-none sm:w-48">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone-400" />
-                    <Input placeholder="Cari nama / NIB / Pimpinan" value={pesertaSearch}
+                    <Input placeholder="Cari nama / NIB" value={pesertaSearch}
                       onChange={(e) => setPesertaSearch(e.target.value)}
-                      className="w-48 h-9 pl-8 pr-7" />
+                      className="w-full h-9 pl-8 pr-7" />
                     {pesertaSearch && (
                       <button onClick={() => setPesertaSearch("")}
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}
+                  </div>
+                  <div className="flex items-center gap-1 bg-stone-100 rounded-lg p-0.5">
+                    <button onClick={() => setViewMode("table")}
+                      className={`p-1.5 rounded-md transition-colors ${viewMode === "table" ? "bg-white shadow-sm text-stone-800" : "text-stone-400 hover:text-stone-600"}`}>
+                      <List className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => setViewMode("card")}
+                      className={`p-1.5 rounded-md transition-colors ${viewMode === "card" ? "bg-white shadow-sm text-stone-800" : "text-stone-400 hover:text-stone-600"}`}>
+                      <LayoutGrid className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -315,16 +325,18 @@ export function PesertaTab({
                       ? "Tidak ada peserta yang cocok dengan pencarian."
                       : "Belum ada data peserta. Tambahkan melalui form atau import CSV."} />
                 </div>
-              ) : (
+              ) : viewMode === "table" ? (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-10">
-                          <input type="checkbox" className="h-4 w-4 rounded border-stone-300 accent-emerald-600"
-                            checked={filteredPeserta.length > 0 && filteredPeserta.every((p) => selectedPesertaIds.includes(p.id))}
-                            onChange={handleToggleSelectAllPeserta} disabled={!filteredPeserta.length} />
-                        </TableHead>
+                         <TableHead className="w-10">
+                           <label className="inline-flex items-center justify-center p-1.5 -m-1.5 cursor-pointer">
+                             <input type="checkbox" className="h-5 w-5 rounded border-stone-300 accent-emerald-600"
+                               checked={filteredPeserta.length > 0 && filteredPeserta.every((p) => selectedPesertaIds.includes(p.id))}
+                               onChange={handleToggleSelectAllPeserta} disabled={!filteredPeserta.length} />
+                           </label>
+                         </TableHead>
                         <TableHead className="text-stone-600">NIB</TableHead>
                         <TableHead className="text-stone-600">Nama</TableHead>
                         <TableHead className="text-stone-600">Pimpinan</TableHead>
@@ -335,31 +347,33 @@ export function PesertaTab({
                     <TableBody>
                       {filteredPeserta.map((p) => (
                         <TableRow key={p.id}>
-                          <TableCell>
-                            <input type="checkbox" className="h-4 w-4 rounded border-stone-300 accent-emerald-600"
-                              checked={selectedPesertaIds.includes(p.id)}
-                              onChange={() => handleToggleSelectPeserta(p.id)} />
-                          </TableCell>
+                           <TableCell>
+                             <label className="inline-flex items-center justify-center p-1.5 -m-1.5 cursor-pointer">
+                               <input type="checkbox" className="h-5 w-5 rounded border-stone-300 accent-emerald-600"
+                                 checked={selectedPesertaIds.includes(p.id)}
+                                 onChange={() => handleToggleSelectPeserta(p.id)} />
+                             </label>
+                           </TableCell>
                           <TableCell className="font-mono text-xs">{p.NIB || "—"}</TableCell>
                           <TableCell className="text-stone-800 font-medium">{p.NamaPeserta}</TableCell>
                           <TableCell className="text-stone-600">{p.Pimpinan}</TableCell>
                           <TableCell><StatusBadge status={p.StatusVoting} /></TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
-                              <Button variant="outline" size="icon" className="h-8 w-8"
-                                onClick={() => generateQRCode(p, "view")} title="Lihat QR">
-                                <Eye className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button variant="outline" size="icon" className="h-8 w-8"
-                                onClick={() => generateQRCode(p, "download")} title="Download QR">
-                                <Download className="h-3.5 w-3.5" />
-                              </Button>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="icon" className="h-8 w-8"
-                                    onClick={() => setEditingPeserta(p)}>
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </Button>
+                              <Button variant="outline" size="icon" className="h-9 w-9 shrink-0"
+                                 onClick={() => generateQRCode(p, "view")} title="Lihat QR">
+                                 <Eye className="h-3.5 w-3.5" />
+                               </Button>
+                               <Button variant="outline" size="icon" className="h-9 w-9 shrink-0"
+                                 onClick={() => generateQRCode(p, "download")} title="Download QR">
+                                 <Download className="h-3.5 w-3.5" />
+                               </Button>
+                               <Dialog>
+                                 <DialogTrigger asChild>
+                                   <Button variant="outline" size="icon" className="h-9 w-9 shrink-0"
+                                     onClick={() => setEditingPeserta(p)}>
+                                     <Pencil className="h-3.5 w-3.5" />
+                                   </Button>
                                 </DialogTrigger>
                                 {editingPeserta && (
                                   <DialogContent>
@@ -385,25 +399,65 @@ export function PesertaTab({
                                   </DialogContent>
                                 )}
                               </Dialog>
-                              <Button variant="destructive" size="icon" className="h-8 w-8"
-                                onClick={() => handleDeletePeserta(p.id)}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                               <Button variant="destructive" size="icon" className="h-9 w-9 shrink-0"
+                                 onClick={() => handleDeletePeserta(p.id)}>
+                                 <Trash2 className="h-3.5 w-3.5" />
+                               </Button>
                             </div>
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
-                  </Table>
-                </div>
-              )}
+                   </Table>
+                 </div>
+               ) : (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4">
+                   {filteredPeserta.map((p) => (
+                     <div key={p.id} className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
+                       <div className="flex items-start justify-between gap-2">
+                         <div className="space-y-1 min-w-0 flex-1">
+                           <p className="text-sm font-semibold text-stone-800 truncate">{p.NamaPeserta}</p>
+                           <p className="font-mono text-xs text-stone-500">{p.NIB || "—"}</p>
+                           <p className="text-xs text-stone-600 truncate">{p.Pimpinan}</p>
+                         </div>
+                         <label className="inline-flex items-center justify-center p-1.5 -m-1.5 cursor-pointer shrink-0">
+                           <input type="checkbox" className="h-5 w-5 rounded border-stone-300 accent-emerald-600"
+                             checked={selectedPesertaIds.includes(p.id)}
+                             onChange={() => handleToggleSelectPeserta(p.id)} />
+                         </label>
+                       </div>
+                       <div className="flex items-center justify-between">
+                         <StatusBadge status={p.StatusVoting} />
+                         <div className="flex items-center gap-1">
+                           <Button variant="outline" size="icon" className="h-9 w-9 shrink-0"
+                             onClick={() => generateQRCode(p, "view")} title="Lihat QR">
+                             <Eye className="h-3.5 w-3.5" />
+                           </Button>
+                           <Button variant="outline" size="icon" className="h-9 w-9 shrink-0"
+                             onClick={() => generateQRCode(p, "download")} title="Download QR">
+                             <Download className="h-3.5 w-3.5" />
+                           </Button>
+                           <Button variant="outline" size="icon" className="h-9 w-9 shrink-0"
+                             onClick={() => setEditingPeserta(p)}>
+                             <Pencil className="h-3.5 w-3.5" />
+                           </Button>
+                           <Button variant="destructive" size="icon" className="h-9 w-9 shrink-0"
+                             onClick={() => handleDeletePeserta(p.id)}>
+                             <Trash2 className="h-3.5 w-3.5" />
+                           </Button>
+                         </div>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               )}
             </CardContent>
             {!pesertaLoading && pesertaList.length > 0 && (
-              <div className="flex items-center justify-between px-6 py-3 border-t border-stone-100">
+              <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-3 border-t border-stone-100">
                 <span className="text-xs text-stone-500">
                   {pesertaLoading ? "Memuat..." : `Menampilkan ${pesertaList.length} dari ${pesertaTotalCount || pesertaList.length} peserta`}
                 </span>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" onClick={onReset} disabled={pesertaLoading}>
                     <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Muat Ulang
                   </Button>
@@ -423,6 +477,32 @@ export function PesertaTab({
         onDelete={handleBulkDeletePeserta}
         onDownloadQR={handleBulkDownloadQR}
       />
+
+      <Dialog open={!!editingPeserta} onOpenChange={(open) => !open && setEditingPeserta(null)}>
+        {editingPeserta && (
+          <DialogContent>
+            <DialogHeader><DialogTitle>Edit Data Peserta</DialogTitle></DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-xs text-stone-600">Nama Peserta</Label>
+                <Input value={editingPeserta.NamaPeserta}
+                  onChange={(e) => setEditingPeserta({ ...editingPeserta, NamaPeserta: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-stone-600">NIB</Label>
+                <Input value={editingPeserta.NIB}
+                  onChange={(e) => setEditingPeserta({ ...editingPeserta, NIB: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-stone-600">Pimpinan</Label>
+                <Input value={editingPeserta.Pimpinan}
+                  onChange={(e) => setEditingPeserta({ ...editingPeserta, Pimpinan: e.target.value })} />
+              </div>
+              <Button onClick={handleEditPeserta} className="w-full">Simpan Perubahan</Button>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
 
       <ConfirmDialog open={confirmState.open} title={confirmState.title}
         description={confirmState.description} onConfirm={confirmState.onConfirm} onClose={closeConfirm} />

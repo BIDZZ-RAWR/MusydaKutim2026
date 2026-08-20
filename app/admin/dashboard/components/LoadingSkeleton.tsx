@@ -57,7 +57,7 @@ export function LoadingSkeleton({ variant = "text", count = 1 }: LoadingSkeleton
   return (
     <div className="space-y-2">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className={`${shimmer} h-4 w-${i === 0 ? "full" : "3/4"}`} />
+        <div key={i} className={`${shimmer} h-4 ${i === 0 ? "w-full" : "w-3/4"}`} />
       ))}
     </div>
   )

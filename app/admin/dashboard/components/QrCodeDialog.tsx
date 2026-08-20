@@ -24,7 +24,7 @@ export function QrCodeDialog({ peserta, qrCodeUrl, onDownload, onClose }: QrCode
         </DialogHeader>
         <div className="flex flex-col items-center justify-center p-6 space-y-4">
           {qrCodeUrl && (
-            <img src={qrCodeUrl || "/placeholder.svg"} alt="QR Code" className="w-64 h-64 border rounded-lg" />
+            <img src={qrCodeUrl || "/placeholder.svg"} alt="QR Code" className="w-64 h-auto border rounded-lg" />
           )}
           <Button onClick={() => peserta && onDownload(peserta)} className="w-full">
             <Download className="w-4 h-4 mr-2" /> Download QR Code

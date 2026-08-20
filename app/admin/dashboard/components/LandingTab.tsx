@@ -82,18 +82,18 @@ function ColorInput({
             type="color"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="h-9 w-9 rounded-lg border border-stone-200 cursor-pointer bg-transparent p-0.5"
+            className="h-10 w-10 rounded-lg border border-stone-200 cursor-pointer bg-transparent p-0.5"
           />
         </div>
         <Input value={value} onChange={(e) => onChange(e.target.value)}
-          className="font-mono text-xs h-9" />
-        <div className="flex gap-1">
+          className="font-mono text-xs h-9 min-w-0 flex-1" />
+        <div className="flex gap-1.5">
           {COLOR_SWATCHES.slice(0, 5).map((swatch) => (
             <button
               key={swatch}
               type="button"
               onClick={() => onChange(swatch)}
-              className={`h-6 w-6 rounded-full border-2 transition-all hover:scale-110 ${
+              className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 ${
                 value === swatch ? "border-stone-800 scale-110" : "border-transparent"
               }`}
               style={{ backgroundColor: swatch }}
