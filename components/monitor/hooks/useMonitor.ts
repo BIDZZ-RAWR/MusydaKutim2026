@@ -87,8 +87,8 @@ export function useMonitor(onToast: (variant: string, title: string, description
   const toggleCandidate = (id: string) => {
     setSelectedCandidates((prev) => {
       if (prev.includes(id)) return prev.filter((cid) => cid !== id)
-      if (prev.length >= 9) {
-        onToast("destructive", "Batas pilihan tercapai", "Pilih tepat 9 orang. Hapus pilihan lain sebelum menambah.")
+      if (prev.length >= 1) {
+        onToast("destructive", "Batas pilihan tercapai", "Pilih tepat 1 orang. Hapus pilihan lain sebelum menambah.")
         return prev
       }
       return [...prev, id]
@@ -96,8 +96,8 @@ export function useMonitor(onToast: (variant: string, title: string, description
   }
 
   const handleVote = async () => {
-    if (selectedCandidates.length !== 9) {
-      onToast("destructive", "Pilih 9 calon", "Anda harus memilih tepat 9 orang sebelum menyimpan suara.")
+    if (selectedCandidates.length !== 1) {
+      onToast("destructive", "Pilih 1 calon", "Anda harus memilih tepat 1 orang sebelum menyimpan suara.")
       return
     }
     if (!bilikState.activeVoterNIB) return

@@ -12,6 +12,9 @@ export async function POST(request: NextRequest) {
     if (!bilikId || !voterId || !candidateIds || !Array.isArray(candidateIds) || candidateIds.length === 0) {
       return apiError("bilikId, voterId, candidateIds wajib diisi")
     }
+    if (candidateIds.length !== 1) {
+      return apiError("Harus memilih tepat 1 calon")
+    }
 
     const batch = getAdminDb().batch()
     const participantRef = getAdminDb().collection("Data_Peserta").doc(voterId)

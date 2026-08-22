@@ -17,7 +17,7 @@ export default function VoteActionBar({ disabled, isSubmitting, onSubmit }: Vote
         disabled={disabled}
         onClick={onSubmit}
       >
-        {isSubmitting ? "Menyimpan Suara..." : "\u2713 SIMPAN 9 PILIHAN SAYA"}
+        {isSubmitting ? "Menyimpan Suara..." : "\u2713 SIMPAN PILIHAN SAYA"}
       </Button>
     </div>
   )

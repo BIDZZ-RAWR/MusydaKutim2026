@@ -56,7 +56,7 @@ export default function MonitorPage() {
         </div>
 
         <VoteActionBar
-          disabled={isSubmitting || selectedCandidates.length !== 9}
+          disabled={isSubmitting || selectedCandidates.length !== 1}
           isSubmitting={isSubmitting}
           onSubmit={handleVote}
         />
